@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -12,7 +13,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Copy index.html to EC2
+      - name: Deploy HTML to EC2
         env:
           HOST: ${{ secrets.EC2_HOST }}
           USER: ${{ secrets.EC2_USER }}
@@ -21,13 +22,12 @@ jobs:
           echo "$SSH_KEY" > private_key.pem
           chmod 600 private_key.pem
 
-          # Create destination directory and copy file
-          scp -i private_key.pem -o StrictHostKeyChecking=no index.html $USER@$HOST:/tmp/index.html
+          # Copy your HTML file to the Nginx web root directly
+          scp -i private_key.pem -o StrictHostKeyChecking=no index.html $USER@$HOST:/usr/share/nginx/html/index.html
 
-          # Move file to nginx web root and restart nginx
+          # Adjust permissions and restart Nginx
           ssh -i private_key.pem -o StrictHostKeyChecking=no $USER@$HOST << 'EOF'
-            sudo mv /tmp/index.html /var/www/html/index.html
-            sudo chown www-data:www-data /var/www/html/index.html || true
+            sudo chown nginx:nginx /usr/share/nginx/html/index.html || sudo chown www-data:www-data /usr/share/nginx/html/index.html
             sudo systemctl restart nginx
           EOF
 
