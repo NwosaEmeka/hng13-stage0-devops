@@ -22,13 +22,14 @@ jobs:
           echo "$SSH_KEY" > private_key.pem
           chmod 600 private_key.pem
 
-          # Copy your HTML file to the Nginx web root directly
-          scp -i private_key.pem -o StrictHostKeyChecking=no index.html $USER@$HOST:/usr/share/nginx/html/index.html
+          # Upload to a temporary directory
+          scp -i private_key.pem -o StrictHostKeyChecking=no index.html $USER@$HOST:/tmp/index.html
 
-          # Adjust permissions and restart Nginx
+          # Move into Nginx's web root using sudo
           ssh -i private_key.pem -o StrictHostKeyChecking=no $USER@$HOST << 'EOF'
+            sudo mv /tmp/index.html /usr/share/nginx/html/index.html
             sudo chown nginx:nginx /usr/share/nginx/html/index.html || sudo chown www-data:www-data /usr/share/nginx/html/index.html
-            sudo systemctl restart nginx
+            sudo systemctl reload nginx
           EOF
 
           rm -f private_key.pem
